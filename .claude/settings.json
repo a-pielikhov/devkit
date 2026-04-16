@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "vault": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/artempielikhov/Projects/engineering-vault"
+      ]
+    }
+  }
+}
