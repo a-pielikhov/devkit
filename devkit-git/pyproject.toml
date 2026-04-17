@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "devkit-git"
+version = "0.1.0"
+description = "Git helpers for devkit"
+requires-python = ">=3.11"
+dependencies = [
+    "devkit-core>=0.1.0",
+    "typer>=0.12",
+    "gitpython>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-mock>=3",
+    "ruff>=0.4",
+    "mypy>=1.10",
+]
+
+[project.entry-points."devkit.commands"]
+git = "devkit_git.commands:CommandGroup"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/devkit_git"]

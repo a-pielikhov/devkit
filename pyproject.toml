@@ -1,0 +1,19 @@
+# Root-level tool configuration for the monorepo.
+# Not a package — individual packages live in devkit-*/
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = [
+    "B008",   # do not perform function calls in default arguments (typer pattern)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["devkit_core", "devkit_git", "devkit_net", "devkit_file", "devkit_encode"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
