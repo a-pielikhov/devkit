@@ -22,9 +22,7 @@ class ConfigStore:
             with open(self._path, "rb") as f:
                 return tomllib.load(f)
         except tomllib.TOMLDecodeError as exc:
-            print_error(
-                f"Config file is malformed: {exc}. Fix or delete {self._path}"
-            )
+            print_error(f"Config file is malformed: {exc}. Fix or delete {self._path}")
             raise SystemExit(2) from exc
 
     def _save(self, data: dict[str, Any]) -> None:
@@ -76,4 +74,5 @@ class ConfigStore:
         self._save(data)
 
     def show(self, module: str) -> dict[str, Any]:
-        return self._load().get(module, {})
+        result = self._load().get(module, {})
+        return dict(result)

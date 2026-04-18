@@ -14,9 +14,7 @@ T = TypeVar("T")
 
 def _spinner_suppressed() -> bool:
     return (
-        not sys.stdout.isatty()
-        or os.environ.get("NO_COLOR") is not None
-        or os.environ.get("CI") is not None
+        not sys.stdout.isatty() or os.environ.get("NO_COLOR") is not None or os.environ.get("CI") is not None
     )
 
 

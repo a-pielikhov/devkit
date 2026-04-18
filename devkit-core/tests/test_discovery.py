@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -5,7 +8,7 @@ import pytest
 from devkit_core.discovery import discover_plugins
 
 
-def _make_ep(name: str, cls, dist_name: str = "devkit-fake"):
+def _make_ep(name: str, cls: Any, dist_name: str = "devkit-fake") -> Any:
     ep = MagicMock()
     ep.name = name
     ep.value = f"{dist_name.replace('-', '_')}.commands:CommandGroup"
@@ -15,7 +18,7 @@ def _make_ep(name: str, cls, dist_name: str = "devkit-fake"):
     return ep
 
 
-def _make_group_cls(name: str = "fake"):
+def _make_group_cls(name: str = "fake") -> Any:
     instance = MagicMock()
     instance.name = name
     instance.app = MagicMock()
@@ -23,7 +26,7 @@ def _make_group_cls(name: str = "fake"):
     return cls
 
 
-def test_discover_returns_loaded_groups():
+def test_discover_returns_loaded_groups() -> None:
     cls = _make_group_cls("fake")
     ep = _make_ep("fake", cls)
 
@@ -34,13 +37,13 @@ def test_discover_returns_loaded_groups():
     assert groups[0].name == "fake"
 
 
-def test_discover_returns_empty_when_no_entry_points():
+def test_discover_returns_empty_when_no_entry_points() -> None:
     with patch("devkit_core.discovery.entry_points", return_value=[]):
         groups = discover_plugins()
     assert groups == []
 
 
-def test_discover_conflict_exits_2():
+def test_discover_conflict_exits_2() -> None:
     cls = _make_group_cls("git")
     ep1 = _make_ep("git", cls, "devkit-git")
     ep2 = _make_ep("git", cls, "devkit-mygit")
@@ -53,8 +56,7 @@ def test_discover_conflict_exits_2():
     assert exc_info.value.code == 2
 
 
-def test_discover_broken_import_skips_and_loads_rest():
-    # First EP raises on instantiation, second loads fine
+def test_discover_broken_import_skips_and_loads_rest() -> None:
     failing_cls = MagicMock(side_effect=ImportError("missing dep"))
     failing_ep = _make_ep("broken", failing_cls)
 
@@ -68,8 +70,7 @@ def test_discover_broken_import_skips_and_loads_rest():
     assert groups[0].name == "ok"
 
 
-def test_discover_missing_protocol_attrs_skips():
-    # Group instance missing 'app' attribute
+def test_discover_missing_protocol_attrs_skips() -> None:
     incomplete = MagicMock(spec=["name"])
     incomplete.name = "nope"
     cls = MagicMock(return_value=incomplete)

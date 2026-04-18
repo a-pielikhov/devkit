@@ -1,4 +1,4 @@
-# <project-slug> — CLAUDE.md
+# devkit — CLAUDE.md
 
 > Read context and spec from the vault at the start of every session.
 > Write implementation code directly to real file paths — use git diff to review before committing.
@@ -9,8 +9,8 @@
 ## Context
 
 Read these files from the vault before doing anything else in this session:
-- `01-projects/<project-slug>/context.md` — stack, decisions, current stage
-- `01-projects/<project-slug>/spec.md` — acceptance criteria, API shape, technical approach
+- `01-projects/devkit/context.md` — stack, decisions, current stage
+- `01-projects/devkit/spec.md` — acceptance criteria, API shape, technical approach
 
 The vault MCP server is pre-configured in `.claude/settings.json`.
 
@@ -76,7 +76,38 @@ Always run the full check before proposing a code review.
 
 ## Tests
 
-<!-- Fill in: how to run tests for this project -->
+Run from the package directory:
+
+```bash
+cd devkit-core && pytest
+```
+
+Run all packages at once:
+
+```bash
+for pkg in devkit-core devkit-git devkit-net devkit-file devkit-encode; do
+  echo "=== $pkg ===" && (cd $pkg && pytest -q)
+done
+```
+
+Tests exist for `devkit-core` only at this stage. Each command group gets tests as commands are implemented.
+
+---
+
+## Definition of Done — Implementation
+
+Implementation is complete when all of the following are true:
+
+- [ ] All AC in `01-projects/devkit/spec.md` are checked off
+- [ ] Linter passes with no errors
+- [ ] Type checker passes with no errors
+- [ ] All tests pass
+- [ ] `README.md` reflects the current install, run, and test process
+
+**Tracking AC progress:**
+Check off each AC in `01-projects/devkit/spec.md` as it is implemented and verified.
+You are permitted to write to that file for this purpose only.
+Do not modify any other file in the vault.
 
 ---
 

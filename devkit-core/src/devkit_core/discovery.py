@@ -41,8 +41,6 @@ def discover_plugins() -> list[Any]:
                 continue
             groups.append(group)
         except Exception as exc:  # noqa: BLE001
-            print_warning(
-                f"Failed to load plugin '{ep.name}' from {pkg}: {exc}. Skipping."
-            )
+            print_warning(f"Failed to load plugin '{ep.name}' from {pkg}: {exc}. Skipping.")
 
     return groups
