@@ -136,6 +136,12 @@ def test_encode_timestamp_json() -> None:
     assert "utc" in data
 
 
+def test_encode_timestamp_out_of_range_exits_1() -> None:
+    result = runner.invoke(encode_app, ["timestamp", "99999999999999"])
+    assert result.exit_code == 1
+    assert "range" in result.output.lower()
+
+
 # ── encode format-json ────────────────────────────────────────────────────────
 
 
@@ -187,6 +193,15 @@ def test_decode_base64_invalid_exits_1() -> None:
 def test_decode_base64_url_safe_exits_1() -> None:
     result = runner.invoke(decode_app, ["base64", "aGVs-bG8_"])
     assert result.exit_code == 1
+
+
+def test_decode_base64_binary_payload_exits_1() -> None:
+    import base64 as _b64
+
+    binary_b64 = _b64.b64encode(bytes([0xFF, 0xFE, 0x00, 0x01])).decode()
+    result = runner.invoke(decode_app, ["base64", binary_b64])
+    assert result.exit_code == 1
+    assert "UTF-8" in result.output or "binary" in result.output.lower()
 
 
 def test_decode_base64_json() -> None:

@@ -59,6 +59,18 @@ def test_find_duplicates_delete(tmp_path: Path, monkeypatch: Any) -> None:
     assert len(remaining) == 1
 
 
+def test_find_duplicates_skips_symlinks(tmp_path: Path) -> None:
+    (tmp_path / "original.txt").write_text("same")
+    (tmp_path / "copy.txt").write_text("same")
+    link = tmp_path / "link.txt"
+    link.symlink_to(tmp_path / "original.txt")
+    result = runner.invoke(app, ["find-duplicates", str(tmp_path), "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    paths_in_groups = [item["path"] for group in data for item in group]
+    assert not any("link.txt" in p for p in paths_in_groups)
+
+
 # ── find-large-files ──────────────────────────────────────────────────────────
 
 
@@ -123,3 +135,17 @@ def test_find_large_files_json(tmp_path: Path) -> None:
     assert len(data) == 1
     assert "size_bytes" in data[0]
     assert "size_human" in data[0]
+
+
+def test_find_large_files_pattern_filter(tmp_path: Path) -> None:
+    (tmp_path / "app.log").write_bytes(b"x" * 2048)
+    (tmp_path / "app.txt").write_bytes(b"x" * 2048)
+    result = runner.invoke(
+        app,
+        ["find-large-files", str(tmp_path), "--min-size", "1KB", "--pattern", r"\.log$", "--json"],
+    )
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    paths = [item["path"] for item in data]
+    assert any("app.log" in p for p in paths)
+    assert all("app.txt" not in p for p in paths)

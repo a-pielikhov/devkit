@@ -40,7 +40,13 @@ def discover_plugins() -> list[Any]:
                 )
                 continue
             groups.append(group)
-        except Exception as exc:  # noqa: BLE001
+        except (ImportError, AttributeError, TypeError) as exc:
             print_warning(f"Failed to load plugin '{ep.name}' from {pkg}: {exc}. Skipping.")
+        except Exception as exc:
+            print_warning(
+                f"Unexpected error loading plugin '{ep.name}' from {pkg}: "
+                f"{type(exc).__name__}: {exc}. Skipping."
+            )
+            raise
 
     return groups

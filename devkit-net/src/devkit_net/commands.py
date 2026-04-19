@@ -9,7 +9,6 @@ import time
 import webbrowser
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from typing import Any
-from urllib.error import URLError
 from urllib.request import urlopen
 
 import psutil
@@ -67,7 +66,7 @@ def ip(
         try:
             with urlopen("https://api.ipify.org", timeout=5) as resp:
                 public_ip: str = resp.read().decode().strip()
-        except URLError:
+        except OSError:
             public_ip = "unavailable"
 
         return rows, public_ip
@@ -163,7 +162,7 @@ def serve(
     try:
         server = HTTPServer(("0.0.0.0", port_num), SimpleHTTPRequestHandler)
     except OSError:
-        print_error(f"Port {port_num} is already in use. Try: devkit net serve {port_num + 80}")
+        print_error(f"Port {port_num} is already in use. Try: devkit net serve {port_num + 1}")
         raise typer.Exit(2) from None
 
     typer.echo(f"Serving http://0.0.0.0:{port_num} — Ctrl+C to stop")

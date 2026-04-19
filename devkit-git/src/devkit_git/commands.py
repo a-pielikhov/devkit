@@ -157,9 +157,9 @@ def sync_fork() -> None:
             lambda: repo.git.rebase(upstream_branch), label=f"Rebasing onto {upstream_branch}..."
         )
     except GitCommandError as exc:
+        conflicts = [d.a_path for d in repo.index.diff(None)]
         with contextlib.suppress(GitCommandError):
             repo.git.rebase("--abort")
-        conflicts = [d.a_path for d in repo.index.diff(None)]
         conflict_str = " ".join(conflicts) if conflicts else "<unknown>"
         print_error(
             f"Rebase conflict on {conflict_str}. Resolve manually:\n"
@@ -201,7 +201,6 @@ def undo() -> None:
         repo.git.reset("--soft", "HEAD~1")
     else:
         repo.git.execute(["git", "update-ref", "-d", "HEAD"])
-        repo.git.add(".")
 
     typer.echo(f"Undone: [{commit_hash}] {commit_msg}")
     if is_merge:
@@ -246,7 +245,7 @@ def list_merged(
 
     def _find_merged() -> list[str]:
         raw = repo.git.branch("--merged", default_branch).strip().splitlines()
-        merged_names = {b.strip().lstrip("* ") for b in raw}
+        merged_names = {b.strip().removeprefix("* ") for b in raw}
         return [name for name in merged_names if name and name not in protected and name != current]
 
     merged = run_with_spinner(_find_merged, label="Finding merged branches...")

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64 as _base64
+import binascii
 import hashlib
 import json
 import re
@@ -59,7 +60,9 @@ def encode_base64(
     """Encode <string> to base64."""
     if string is None:
         raw = sys.stdin.read()
-        if raw.endswith("\n"):
+        if raw.endswith("\r\n"):
+            raw = raw[:-2]
+        elif raw.endswith("\n"):
             raw = raw[:-1]
     else:
         raw = string
@@ -135,7 +138,11 @@ def encode_timestamp(
         print_error(f"{unix_timestamp!r} is not a valid integer")
         raise typer.Exit(1) from None
 
-    utc_dt = datetime.fromtimestamp(ts, tz=UTC)
+    try:
+        utc_dt = datetime.fromtimestamp(ts, tz=UTC)
+    except (OSError, OverflowError, ValueError):
+        print_error(f"Timestamp {ts} is out of the supported range")
+        raise typer.Exit(1) from None
     utc_str = utc_dt.strftime("%Y-%m-%d %H:%M:%S UTC")
 
     if json_:
@@ -186,7 +193,9 @@ def decode_base64(
     """Decode <string> from base64."""
     if string is None:
         raw = sys.stdin.read()
-        if raw.endswith("\n"):
+        if raw.endswith("\r\n"):
+            raw = raw[:-2]
+        elif raw.endswith("\n"):
             raw = raw[:-1]
     else:
         raw = string
@@ -196,9 +205,15 @@ def decode_base64(
         raise typer.Exit(1)
 
     try:
-        decoded = _base64.b64decode(raw.encode(), validate=True).decode()
-    except Exception:
+        decoded_bytes = _base64.b64decode(raw.encode(), validate=True)
+    except (binascii.Error, ValueError):
         print_error(f"{raw!r} is not valid base64")
+        raise typer.Exit(1) from None
+
+    try:
+        decoded = decoded_bytes.decode()
+    except UnicodeDecodeError:
+        print_error("Decoded content is not valid UTF-8 (binary data?)")
         raise typer.Exit(1) from None
 
     if json_:

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import contextlib
+import os
+import tempfile
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -27,8 +30,15 @@ class ConfigStore:
 
     def _save(self, data: dict[str, Any]) -> None:
         self._path.parent.mkdir(parents=True, exist_ok=True)
-        with open(self._path, "wb") as f:
-            tomli_w.dump(data, f)
+        fd, tmp_path = tempfile.mkstemp(dir=self._path.parent, suffix=".tmp")
+        try:
+            with os.fdopen(fd, "wb") as f:
+                tomli_w.dump(data, f)
+            os.replace(tmp_path, self._path)
+        except Exception:
+            with contextlib.suppress(OSError):
+                os.unlink(tmp_path)
+            raise
 
     def get(self, module: str, key: str, default: Any = None) -> Any:
         return self._load().get(module, {}).get(key, default)
@@ -60,7 +70,9 @@ class ConfigStore:
             if isinstance(existing, list):
                 if value in existing:
                     existing.remove(value)
-                if not existing:
+                if len(existing) == 1:
+                    section[key] = existing[0]
+                elif not existing:
                     del section[key]
             elif existing == value:
                 del section[key]

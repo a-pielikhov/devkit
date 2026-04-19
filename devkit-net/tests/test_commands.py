@@ -65,6 +65,21 @@ def test_port_json(monkeypatch: Any) -> None:
     assert data[0]["name"] == "nginx"
 
 
+# ── net serve ─────────────────────────────────────────────────────────────────
+
+
+def test_serve_port_in_use_exits_2(monkeypatch: Any) -> None:
+    with patch("devkit_net.commands.HTTPServer", side_effect=OSError("Address already in use")):
+        result = runner.invoke(app, ["serve", "8080"])
+    assert result.exit_code == 2
+    assert "already in use" in result.output
+
+
+def test_serve_invalid_port_exits_1() -> None:
+    result = runner.invoke(app, ["serve", "0"])
+    assert result.exit_code == 1
+
+
 # ── net check ─────────────────────────────────────────────────────────────────
 
 
@@ -145,8 +160,6 @@ def test_ip_unavailable_when_no_interfaces(monkeypatch: Any) -> None:
 
 
 def test_ip_public_unavailable_on_error(monkeypatch: Any) -> None:
-    from urllib.error import URLError
-
     stat = MagicMock()
     stat.isup = True
     addr = MagicMock()
@@ -156,8 +169,33 @@ def test_ip_public_unavailable_on_error(monkeypatch: Any) -> None:
     with (
         patch("devkit_net.commands.psutil.net_if_stats", return_value={"eth0": stat}),
         patch("devkit_net.commands.psutil.net_if_addrs", return_value={"eth0": [addr]}),
-        patch("devkit_net.commands.urlopen", side_effect=URLError("timeout")),
+        patch("devkit_net.commands.urlopen", side_effect=OSError("timeout")),
     ):
         result = runner.invoke(app, ["ip"])
     assert result.exit_code == 0
     assert "unavailable" in result.output
+
+
+def test_ip_json_contains_public_ip_field(monkeypatch: Any) -> None:
+    stat = MagicMock()
+    stat.isup = True
+    addr = MagicMock()
+    addr.family = socket.AF_INET
+    addr.address = "192.168.1.100"
+
+    mock_resp = MagicMock()
+    mock_resp.__enter__ = MagicMock(return_value=mock_resp)
+    mock_resp.__exit__ = MagicMock(return_value=False)
+    mock_resp.read.return_value = b"1.2.3.4"
+
+    with (
+        patch("devkit_net.commands.psutil.net_if_stats", return_value={"eth0": stat}),
+        patch("devkit_net.commands.psutil.net_if_addrs", return_value={"eth0": [addr]}),
+        patch("devkit_net.commands.urlopen", return_value=mock_resp),
+    ):
+        result = runner.invoke(app, ["ip", "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert isinstance(data, list)
+    assert "public_ip" in data[0]
+    assert data[0]["public_ip"] == "1.2.3.4"

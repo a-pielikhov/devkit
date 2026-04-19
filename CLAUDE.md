@@ -1,18 +1,17 @@
 # devkit — CLAUDE.md
 
-> Read context and spec from the vault at the start of every session.
-> Write implementation code directly to real file paths — use git diff to review before committing.
-> Use ai-output/ for generated documents only (specs, ADRs, release notes, design drafts).
+> This file provides context for subagents spawned by the vault orchestrator.
+> Primary sessions always start from the vault (engineering-vault/), not this repo.
+> Write implementation code directly to real file paths. Do not commit unless explicitly asked.
 
 ---
 
 ## Context
 
-Read these files from the vault before doing anything else in this session:
-- `01-projects/devkit/context.md` — stack, decisions, current stage
+This repo is the implementation target for the `devkit` project.
+Full context lives in the vault:
+- `01-projects/devkit/context.md` — stack, decisions, current stage, repo path
 - `01-projects/devkit/spec.md` — acceptance criteria, API shape, technical approach
-
-The vault MCP server is pre-configured in `.claude/settings.json`.
 
 ---
 
@@ -76,17 +75,15 @@ Always run the full check before proposing a code review.
 
 ## Tests
 
-Run from the package directory:
+Run from the repo root:
 
 ```bash
-cd devkit-core && pytest
-```
+# Single package
+cd devkit-core && uv run --with pytest pytest -q
 
-Run all packages at once:
-
-```bash
+# All packages
 for pkg in devkit-core devkit-git devkit-net devkit-file devkit-encode; do
-  echo "=== $pkg ===" && (cd $pkg && pytest -q)
+  echo "=== $pkg ===" && (cd $pkg && uv run --with pytest pytest -q)
 done
 ```
 

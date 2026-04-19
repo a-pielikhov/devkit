@@ -119,6 +119,13 @@ def test_undo_single_commit_no_commits_remain(tmp_path: Path, monkeypatch: Any) 
     assert "no commits" in result.output.lower()
 
 
+def test_undo_initial_commit_working_tree_intact(tmp_path: Path, monkeypatch: Any) -> None:
+    _make_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    runner.invoke(app, ["undo"])
+    assert (tmp_path / "file.txt").exists()
+
+
 def test_undo_merge_commit_prints_note(tmp_path: Path, monkeypatch: Any) -> None:
     repo = _make_repo(tmp_path)
     branch = repo.create_head("feature")
@@ -159,6 +166,51 @@ def test_list_merged_no_merged(tmp_path: Path, monkeypatch: Any) -> None:
     result = runner.invoke(app, ["list-merged"])
     assert result.exit_code == 0
     assert "No merged" in result.output
+
+
+def test_list_merged_delete_removes_branches(tmp_path: Path, monkeypatch: Any) -> None:
+    repo = _make_repo(tmp_path)
+    feature = repo.create_head("feature")
+    feature.checkout()
+    (tmp_path / "feat.txt").write_text("feat")
+    repo.index.add(["feat.txt"])
+    repo.index.commit("feat commit")
+    default = next(h for h in repo.heads if h.name in ("main", "master"))
+    default.checkout()
+    repo.git.merge("feature", "--ff-only")
+    repo.create_head("feature2").checkout()
+    (tmp_path / "feat2.txt").write_text("feat2")
+    repo.index.add(["feat2.txt"])
+    repo.index.commit("feat2 commit")
+    default.checkout()
+    repo.git.merge("feature2", "--ff-only")
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(app, ["list-merged", "--delete"], input="y\n")
+    assert result.exit_code == 0
+    branch_names = [b.name for b in repo.branches]
+    assert "feature" not in branch_names
+    assert "feature2" not in branch_names
+
+
+# ── git sync-fork ─────────────────────────────────────────────────────────────
+
+
+def test_sync_fork_dirty_working_tree_exits_2(tmp_path: Path, monkeypatch: Any) -> None:
+    repo = _make_repo(tmp_path)
+    (tmp_path / "dirty.txt").write_text("dirty")
+    repo.index.add(["dirty.txt"])
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(app, ["sync-fork"])
+    assert result.exit_code == 2
+    assert "Uncommitted" in result.output
+
+
+def test_sync_fork_no_upstream_exits_2(tmp_path: Path, monkeypatch: Any) -> None:
+    _make_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(app, ["sync-fork"])
+    assert result.exit_code == 2
+    assert "upstream" in result.output.lower()
 
 
 # ── git config ────────────────────────────────────────────────────────────────

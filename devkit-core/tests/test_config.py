@@ -58,7 +58,7 @@ def test_remove_specific_value_from_list(tmp_path: Path) -> None:
     store.add("git", "protected_branches", "main")
     store.add("git", "protected_branches", "develop")
     store.remove("git", "protected_branches", "develop")
-    assert store.get("git", "protected_branches") == ["main"]
+    assert store.get("git", "protected_branches") == "main"
 
 
 def test_remove_last_value_deletes_key(tmp_path: Path) -> None:

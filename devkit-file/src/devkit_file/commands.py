@@ -30,8 +30,8 @@ def find_duplicates(
 ) -> None:
     """Find files with identical content by SHA-256 hash."""
 
-    def _scan() -> tuple[list[list[Path]], int]:
-        hashes: dict[str, list[Path]] = defaultdict(list)
+    def _scan() -> tuple[list[list[tuple[Path, int]]], int]:
+        hashes: dict[str, list[tuple[Path, int]]] = defaultdict(list)
         empty_count = 0
 
         def scan_dir(d: Path) -> None:
@@ -44,11 +44,15 @@ def find_duplicates(
                         scan_dir(item)
                     elif item.is_file():
                         try:
-                            if item.stat().st_size == 0:
+                            size = item.stat().st_size
+                            if size == 0:
                                 empty_count += 1
                                 continue
-                            h = hashlib.sha256(item.read_bytes()).hexdigest()
-                            hashes[h].append(item)
+                            h = hashlib.sha256()
+                            with item.open("rb") as fh:
+                                for chunk in iter(lambda: fh.read(65536), b""):
+                                    h.update(chunk)
+                            hashes[h.hexdigest()].append((item, size))
                         except PermissionError:
                             print_warning(f"Permission denied: {item}")
                         except OSError:
@@ -71,10 +75,7 @@ def find_duplicates(
     if json_:
         typer.echo(
             json.dumps(
-                [
-                    [{"path": str(f), "name": f.name, "size": f.stat().st_size} for f in group]
-                    for group in groups
-                ]
+                [[{"path": str(f), "name": f.name, "size": size} for f, size in group] for group in groups]
             )
         )
         return
@@ -83,17 +84,17 @@ def find_duplicates(
         typer.echo(f"\nGroup {i}:")
         print_table(
             ["Filename", "Path", "Size"],
-            [(f.name, str(f.parent), str(f.stat().st_size)) for f in group],
+            [(f.name, str(f.parent), str(size)) for f, size in group],
         )
     if empty_count:
         typer.echo(f"\n{empty_count} empty files skipped")
 
     if delete:
         for group in groups:
-            sorted_group = sorted(group, key=lambda f: len(str(f)))
-            typer.echo(f"\nKeeping: {sorted_group[0]}")
+            sorted_group = sorted(group, key=lambda fs: len(str(fs[0])))
+            typer.echo(f"\nKeeping: {sorted_group[0][0]}")
 
-        to_delete = [f for group in groups for f in sorted(group, key=lambda f: len(str(f)))[1:]]
+        to_delete = [f for group in groups for f, _ in sorted(group, key=lambda fs: len(str(fs[0])))[1:]]
         confirmed = typer.confirm(f"\nDelete {len(to_delete)} duplicate(s)?")
         if confirmed:
             for f in to_delete:

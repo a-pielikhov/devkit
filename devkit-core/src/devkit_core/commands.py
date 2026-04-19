@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import json
+import re
 import subprocess
 import sys
 from importlib.metadata import entry_points, packages_distributions
@@ -15,6 +16,17 @@ from .output import print_error, print_table
 from .spinner import run_with_spinner
 
 BUILTIN_PACKAGES = frozenset({"devkit-core", "devkit-git", "devkit-net", "devkit-file", "devkit-encode"})
+
+_VALID_PACKAGE_RE = re.compile(r"^[A-Za-z0-9]([A-Za-z0-9._-]*[A-Za-z0-9])?$")
+
+
+def _validate_package_name(package: str) -> None:
+    if not _VALID_PACKAGE_RE.match(package):
+        print_error(
+            f"Invalid package name: {package!r}. "
+            "Package names must contain only letters, digits, hyphens, underscores, and dots."
+        )
+        raise typer.Exit(1)
 
 
 def _detect_install_method() -> str:
@@ -31,6 +43,7 @@ def install(
     package: str = typer.Argument(..., help="PyPI package name to install"),
 ) -> None:
     """Install a devkit extension from PyPI."""
+    _validate_package_name(package)
     method = _detect_install_method()
 
     def _do_install() -> None:
@@ -77,6 +90,7 @@ def uninstall(
     package: str = typer.Argument(..., help="Package name to uninstall"),
 ) -> None:
     """Uninstall a devkit extension."""
+    _validate_package_name(package)
     if package in BUILTIN_PACKAGES:
         print_error(f"{package!r} is a built-in package and cannot be uninstalled")
         raise typer.Exit(1)
