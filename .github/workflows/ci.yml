@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }} / Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Lint — ruff format
+        run: uv run ruff format --check .
+
+      - name: Lint — ruff check
+        run: uv run ruff check .
+
+      - name: Type check — mypy
+        run: uv run mypy .
+
+      - name: Test — devkit-core
+        shell: bash
+        run: cd devkit-core && uv run --with pytest pytest -q
+
+      - name: Test — devkit-git
+        shell: bash
+        run: cd devkit-git && uv run --with pytest pytest -q
+
+      - name: Test — devkit-net
+        shell: bash
+        run: cd devkit-net && uv run --with pytest pytest -q
+
+      - name: Test — devkit-file
+        shell: bash
+        run: cd devkit-file && uv run --with pytest pytest -q
+
+      - name: Test — devkit-encode
+        shell: bash
+        run: cd devkit-encode && uv run --with pytest pytest -q

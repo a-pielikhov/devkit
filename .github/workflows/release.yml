@@ -1,0 +1,56 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build wheels and publish release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run CI checks before release
+        run: |
+          uv run ruff format --check .
+          uv run ruff check .
+          uv run mypy .
+
+      - name: Run tests before release
+        shell: bash
+        run: |
+          for pkg in devkit-core devkit-git devkit-net devkit-file devkit-encode; do
+            echo "=== $pkg ===" && (cd $pkg && uv run --with pytest pytest -q)
+          done
+
+      - name: Build wheels
+        shell: bash
+        run: |
+          for pkg in devkit-core devkit-git devkit-net devkit-file devkit-encode devkit-cli; do
+            echo "Building $pkg..." && (cd $pkg && uv build --wheel --out-dir ../dist)
+          done
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.whl
+          generate_release_notes: true
+          body: |
+            ## Install
+
+            ```bash
+            gh release download ${{ github.ref_name }} --repo ${{ github.repository }} --dir /tmp/devkit
+            pipx install devkit-cli --pip-args="--find-links=/tmp/devkit"
+            devkit --help
+            ```

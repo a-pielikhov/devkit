@@ -17,20 +17,28 @@ Any developer can publish a `devkit-*` package to add new command groups — see
 
 - Python 3.11+
 - [pipx](https://pipx.pypa.io/) (recommended for end-user install)
+- [gh CLI](https://cli.github.com/) authenticated (`gh auth login`) — required for the install steps below
 
 ---
 
 ## Installation
 
-```bash
-pipx install devkit-cli
-```
-
-To add optional extensions:
+Download the wheels from the [latest release](../../releases/latest) and install with pipx:
 
 ```bash
-devkit install devkit-js
+# 1. Download all wheels from the latest release (requires gh CLI + repo access)
+gh release download --repo OWNER/devkit --dir /tmp/devkit-wheels
+
+# 2. Install — pip resolves devkit-* packages from local wheels, PyPI deps (typer, rich) from the internet
+pipx install devkit-cli --pip-args="--find-links=/tmp/devkit-wheels"
+
+# 3. Verify
+devkit --help
 ```
+
+Replace `OWNER` with the GitHub organisation or username where the repo lives.
+
+> **Note:** This project is distributed via GitHub Releases. PyPI publish is planned once the API is stable.
 
 ---
 
