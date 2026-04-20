@@ -18,6 +18,8 @@ def _make_repo(tmp_path: Path) -> Any:
     repo = Repo.init(str(tmp_path))
     repo.config_writer().set_value("user", "name", "Test").release()
     repo.config_writer().set_value("user", "email", "test@test.com").release()
+    if repo.active_branch.name != "main":
+        repo.active_branch.rename("main")
     (tmp_path / "file.txt").write_text("initial")
     repo.index.add(["file.txt"])
     repo.index.commit("initial commit")

@@ -34,6 +34,7 @@ devkit-git / devkit-net / devkit-file / devkit-encode
 - Do not run git add or git commit unless explicitly asked
 - When asked to commit, run git diff --staged first to verify what is staged
 - Commit message format: `feat:` / `fix:` / `chore:` / `docs:` / `refactor:`
+- Run `make check` before every commit — it mirrors CI exactly (format, lint, type, tests)
 - Run linter and type checker before asking for code review
 
 ---
@@ -60,7 +61,8 @@ Set up linting and formatting on project initialisation based on the stack:
 - Formatter: `ruff format` (configured in `pyproject.toml`)
 - Linter: `ruff check` (configured in `pyproject.toml`)
 - Type checker: `mypy` (configured in `pyproject.toml`)
-- Run all: `ruff format . && ruff check . && mypy .`
+- Run all checks (mirrors CI): `make check`
+- Auto-fix formatting: `make fix`
 
 **TypeScript / React**
 - Formatter: `prettier` (configured in `.prettierrc`)
@@ -78,13 +80,8 @@ Always run the full check before proposing a code review.
 Run from the repo root:
 
 ```bash
-# Single package
-cd devkit-core && uv run --with pytest pytest -q
-
-# All packages
-for pkg in devkit-core devkit-git devkit-net devkit-file devkit-encode; do
-  echo "=== $pkg ===" && (cd $pkg && uv run --with pytest pytest -q)
-done
+make test                                          # all packages
+cd devkit-core && uv run --with pytest pytest -q   # single package
 ```
 
 Tests exist for `devkit-core` only at this stage. Each command group gets tests as commands are implemented.
