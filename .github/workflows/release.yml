@@ -51,6 +51,6 @@ jobs:
 
             ```bash
             gh release download ${{ github.ref_name }} --repo ${{ github.repository }} --dir /tmp/devkit
-            pipx install devkit-cli --pip-args="--find-links=/tmp/devkit"
+            pipx install "$(ls /tmp/devkit/devkit_cli-*.whl)" --pip-args="--find-links=/tmp/devkit"
             devkit --help
             ```

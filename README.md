@@ -29,8 +29,10 @@ Download the wheels from the [latest release](../../releases/latest) and install
 # 1. Download all wheels from the latest release (requires gh CLI + repo access)
 gh release download --repo OWNER/devkit --dir /tmp/devkit-wheels
 
-# 2. Install — pip resolves devkit-* packages from local wheels, PyPI deps (typer, rich) from the internet
-pipx install devkit-cli --pip-args="--find-links=/tmp/devkit-wheels"
+# 2. Install — installs devkit-cli directly from wheel (bypasses PyPI name conflict);
+#    devkit-* dependencies resolved from local wheels, typer/rich/psutil fetched from PyPI
+pipx install "$(ls /tmp/devkit-wheels/devkit_cli-*.whl)" \
+  --pip-args="--find-links=/tmp/devkit-wheels"
 
 # 3. Verify
 devkit --help
