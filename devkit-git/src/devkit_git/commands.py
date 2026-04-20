@@ -157,7 +157,7 @@ def sync_fork() -> None:
             lambda: repo.git.rebase(upstream_branch), label=f"Rebasing onto {upstream_branch}..."
         )
     except GitCommandError as exc:
-        conflicts = [d.a_path for d in repo.index.diff(None)]
+        conflicts = [d.a_path for d in repo.index.diff(None) if d.a_path is not None]
         with contextlib.suppress(GitCommandError):
             repo.git.rebase("--abort")
         conflict_str = " ".join(conflicts) if conflicts else "<unknown>"
@@ -193,7 +193,8 @@ def undo() -> None:
         raise typer.Exit(1) from None
 
     commit_hash = last_commit.hexsha[:7]
-    commit_msg = last_commit.message.strip().splitlines()[0]
+    raw_msg = last_commit.message
+    commit_msg = (raw_msg.decode() if isinstance(raw_msg, bytes) else raw_msg).strip().splitlines()[0]
     is_merge = len(last_commit.parents) > 1
     has_parent = len(last_commit.parents) > 0
 
