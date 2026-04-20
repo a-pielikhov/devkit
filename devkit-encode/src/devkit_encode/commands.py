@@ -148,13 +148,13 @@ def encode_timestamp(
     if json_:
         result: dict[str, Any] = {"unix": ts, "utc": utc_str}
         if not utc:
-            local_dt = datetime.fromtimestamp(ts).astimezone()
+            local_dt = utc_dt.astimezone()
             result["local"] = local_dt.strftime("%Y-%m-%d %H:%M:%S %Z")
         typer.echo(json.dumps(result))
     elif utc:
         typer.echo(utc_str)
     else:
-        local_dt = datetime.fromtimestamp(ts).astimezone()
+        local_dt = utc_dt.astimezone()
         local_str = local_dt.strftime("%Y-%m-%d %H:%M:%S %Z")
         print_table(["Zone", "Datetime"], [("UTC", utc_str), ("Local", local_str)])
 
