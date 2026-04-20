@@ -1,6 +1,14 @@
 # Root-level tool configuration for the monorepo.
 # Not a package — individual packages live in devkit-*/
 
+[dependency-groups]
+dev = [
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "pytest>=8",
+    "pytest-mock>=3",
+]
+
 [tool.uv.workspace]
 members = [
     "devkit-core",

@@ -12,6 +12,14 @@ members = [
     "devkit-net",
 ]
 
+[manifest.dependency-groups]
+dev = [
+    { name = "mypy", specifier = ">=1.10" },
+    { name = "pytest", specifier = ">=8" },
+    { name = "pytest-mock", specifier = ">=3" },
+    { name = "ruff", specifier = ">=0.4" },
+]
+
 [[package]]
 name = "annotated-doc"
 version = "0.0.4"
