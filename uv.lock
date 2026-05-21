@@ -52,10 +52,14 @@ wheels = [
 
 [[package]]
 name = "devkit-cli"
-version = "0.1.0"
+version = "0.1.2"
 source = { editable = "devkit-cli" }
 dependencies = [
     { name = "devkit-core" },
+    { name = "devkit-encode" },
+    { name = "devkit-file" },
+    { name = "devkit-git" },
+    { name = "devkit-net" },
 ]
 
 [package.optional-dependencies]
@@ -69,6 +73,10 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "devkit-core", editable = "devkit-core" },
+    { name = "devkit-encode", editable = "devkit-encode" },
+    { name = "devkit-file", editable = "devkit-file" },
+    { name = "devkit-git", editable = "devkit-git" },
+    { name = "devkit-net", editable = "devkit-net" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3" },

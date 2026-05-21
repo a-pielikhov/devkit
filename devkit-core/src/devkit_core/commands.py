@@ -128,7 +128,7 @@ def uninstall(
 
 
 def list_extensions(
-    json_: bool = typer.Option(False, "--json", help="Output as JSON"),
+    json_: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
 ) -> None:
     """List all installed command groups."""
     groups = discover_plugins()

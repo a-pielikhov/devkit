@@ -98,3 +98,21 @@ def test_uninstall_not_installed_exits_1() -> None:
         result = runner.invoke(_app, ["uninstall", "devkit-custom"])
     assert result.exit_code == 1
     assert "not currently installed" in result.output
+
+
+# ── aliases ───────────────────────────────────────────────────────────────────
+
+
+def test_alias_ls_invokes_list() -> None:
+    group = MagicMock()
+    group.name = "git"
+    ep = _make_ep("git", "devkit-git")
+
+    with (
+        patch("devkit_core.commands.discover_plugins", return_value=[group]),
+        patch("devkit_core.commands.entry_points", return_value=[ep]),
+    ):
+        result_ls = runner.invoke(_app, ["ls"])
+        result_list = runner.invoke(_app, ["list"])
+    assert result_ls.exit_code == result_list.exit_code
+    assert result_ls.output == result_list.output

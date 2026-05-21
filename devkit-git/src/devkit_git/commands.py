@@ -52,22 +52,40 @@ def _current_branch(repo: Repo) -> str | None:
 
 @app.command("clean-branches")
 def clean_branches(
-    regexp: str = typer.Argument(..., help="Branch name pattern (Python regexp)"),
-    force: bool = typer.Option(False, "--force", help="Also delete protected branches"),
-    json_: bool = typer.Option(False, "--json", help="Output as JSON"),
+    regexp: str = typer.Argument(
+        ..., help="Branch name pattern (Python regexp by default; plain substring with --fixed-string)"
+    ),
+    force: bool = typer.Option(False, "--force", "-f", help="Also delete protected branches"),
+    json_: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
+    fixed_string: bool = typer.Option(
+        False,
+        "--fixed-string",
+        "-F",
+        help="Treat <pattern> as a plain substring match instead of a regexp",
+    ),
 ) -> None:
-    """Delete local branches matching <regexp>."""
-    try:
-        pattern = re.compile(regexp)
-    except re.error as exc:
-        print_error(f"Invalid regexp: {exc}")
-        raise typer.Exit(1) from None
+    """Delete local branches matching <pattern>.
+
+    By default <pattern> is a Python regexp (anchored: must match the full branch name).
+    Use --fixed-string / -F for a plain substring match.
+    """
+    if fixed_string:
+        pattern = None
+    else:
+        try:
+            pattern = re.compile(regexp)
+        except re.error as exc:
+            print_error(f"Invalid regexp: {exc}")
+            raise typer.Exit(1) from None
 
     repo = _open_repo()
     current = _current_branch(repo)
     protected = _protected_branches()
 
     def _scan() -> list[str]:
+        if fixed_string:
+            return [b.name for b in repo.branches if regexp in b.name]
+        assert pattern is not None
         return [b.name for b in repo.branches if pattern.fullmatch(b.name)]
 
     matching = run_with_spinner(_scan, label="Scanning branches...")
@@ -216,7 +234,7 @@ def undo() -> None:
 @app.command("list-merged")
 def list_merged(
     delete: bool = typer.Option(False, "--delete", help="Delete listed branches after confirmation"),
-    json_: bool = typer.Option(False, "--json", help="Output as JSON"),
+    json_: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
 ) -> None:
     """List local branches fully merged into main."""
     repo = _open_repo()
@@ -276,7 +294,7 @@ def config_add(
     key: str = typer.Argument(...),
     value: str = typer.Argument(...),
     replace: bool = typer.Option(False, "--replace", help="Overwrite entire value"),
-    json_: bool = typer.Option(False, "--json", help="Output resulting config as JSON"),
+    json_: bool = typer.Option(False, "--json", "-j", help="Output resulting config as JSON"),
 ) -> None:
     """Add or merge a value into the git module config."""
     _config.add("git", key, value, replace=replace)
@@ -323,7 +341,7 @@ def config_remove(
 
 @config_app.command("show")
 def config_show(
-    json_: bool = typer.Option(False, "--json", help="Output as JSON"),
+    json_: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
 ) -> None:
     """Show current git module config."""
     result = _config.show("git")

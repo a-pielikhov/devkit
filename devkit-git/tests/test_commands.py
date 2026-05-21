@@ -87,6 +87,50 @@ def test_clean_branches_force_deletes_protected(tmp_path: Path, monkeypatch: Any
     assert "master" not in branch_names
 
 
+# ── git clean-branches --fixed-string ────────────────────────────────────────
+
+
+def test_clean_branches_fixed_string_matches_substring(tmp_path: Path, monkeypatch: Any) -> None:
+    repo = _make_repo(tmp_path)
+    repo.create_head("feat/my-feature")
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(app, ["clean-branches", "my-feature", "--fixed-string"], input="y\n")
+    assert result.exit_code == 0
+    branch_names = [b.name for b in repo.branches]
+    assert "feat/my-feature" not in branch_names
+
+
+def test_clean_branches_fixed_string_accepts_invalid_regexp(tmp_path: Path, monkeypatch: Any) -> None:
+    repo = _make_repo(tmp_path)
+    repo.create_head("feat[broken")
+    monkeypatch.chdir(tmp_path)
+    # "feat[" would be an invalid regexp — must not error with --fixed-string
+    result = runner.invoke(app, ["clean-branches", "feat[", "--fixed-string"], input="y\n")
+    assert result.exit_code == 0
+    branch_names = [b.name for b in repo.branches]
+    assert "feat[broken" not in branch_names
+
+
+def test_clean_branches_fixed_string_short_form(tmp_path: Path, monkeypatch: Any) -> None:
+    repo = _make_repo(tmp_path)
+    repo.create_head("feat/short")
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(app, ["clean-branches", "feat/short", "-F"], input="y\n")
+    assert result.exit_code == 0
+    branch_names = [b.name for b in repo.branches]
+    assert "feat/short" not in branch_names
+
+
+def test_clean_branches_fixed_string_with_force(tmp_path: Path, monkeypatch: Any) -> None:
+    repo = _make_repo(tmp_path)
+    repo.create_head("master")
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(app, ["clean-branches", "master", "--fixed-string", "--force"], input="y\n")
+    assert result.exit_code == 0
+    branch_names = [b.name for b in repo.branches]
+    assert "master" not in branch_names
+
+
 # ── git undo ──────────────────────────────────────────────────────────────────
 
 

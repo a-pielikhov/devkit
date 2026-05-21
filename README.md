@@ -44,6 +44,16 @@ Replace `OWNER` with the GitHub organisation or username where the repo lives.
 
 ---
 
+## Shell tab completion
+
+Run once to install completion for your shell:
+
+    devkit --install-completion
+
+Restart your shell (or run `source ~/.zshrc` / `source ~/.bashrc`) for completions to take effect.
+
+---
+
 ## Development setup
 
 Each package under `devkit-*/` is installed separately in editable mode:
