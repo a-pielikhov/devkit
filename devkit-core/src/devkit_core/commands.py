@@ -12,7 +12,7 @@ from typing import Any
 import typer
 
 from .discovery import discover_plugins
-from .output import print_error, print_table
+from .output import print_error
 from .spinner import run_with_spinner
 
 BUILTIN_PACKAGES = frozenset({"devkit-core", "devkit-git", "devkit-net", "devkit-file", "devkit-encode"})
@@ -131,6 +131,11 @@ def list_extensions(
     json_: bool = typer.Option(False, "--json", "-j", help="Output as JSON"),
 ) -> None:
     """List all installed command groups."""
+    from rich.box import HEAVY_HEAD
+    from rich.console import Console
+    from rich.table import Table
+    from rich.text import Text
+
     groups = discover_plugins()
     eps = entry_points(group="devkit.commands")
 
@@ -146,8 +151,44 @@ def list_extensions(
 
     if json_:
         typer.echo(json.dumps(rows))
-    else:
-        print_table(
-            ["Group", "Package", "Version", "Type"],
-            [(r["group"], r["package"], r["version"], r["type"]) for r in rows],
+        return
+
+    # border_style: rgba(112,128,144,0.55) on black = #3e464f
+    table = Table(
+        show_header=True,
+        header_style="bold #e0e0e0",
+        border_style="#3e464f",
+        box=HEAVY_HEAD,
+        pad_edge=False,
+        padding=(0, 1),
+    )
+    table.add_column("Group")
+    table.add_column("Package")
+    table.add_column("Version")
+    table.add_column("Type")
+
+    for r in rows:
+        # steel for built-in, moon for extension — matching .steel / .moon classes
+        type_style = "#708090" if r["type"] == "built-in" else "#e0e0e0"
+        table.add_row(
+            Text(r["group"], style="bold #dc143c"),
+            Text(r["package"], style="#e0e0e0"),
+            Text(r["version"], style="#ffd700"),
+            Text(r["type"], style=type_style),
         )
+
+    console = Console()
+    console.print(table)
+
+    # Footer: all dim (50% moon), dots dim2 (32% moon). NOT gold for numbers.
+    n_total = len(rows)
+    n_builtin = sum(1 for r in rows if r["type"] == "built-in")
+    n_ext = n_total - n_builtin
+    footer = Text(f"  {n_total} groups", style="#707070")
+    footer.append(" · ", style="#474747")
+    footer.append(f"{n_builtin} built-in", style="#707070")
+    footer.append(" · ", style="#474747")
+    footer.append(f"{n_ext} extension", style="#707070")
+    if n_ext != 1:
+        footer.append("s", style="#707070")
+    console.print(footer)

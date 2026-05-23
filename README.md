@@ -1,5 +1,12 @@
 # devkit
 
+```
+    __               __     __ __   
+.--|  |.-----.--.--.|  |--.|__|  |_ 
+|  _  ||  -__|  |  ||    < |  |   _|
+|_____||_____|\___ / |__|__||__|____|
+```
+
 A modular, cross-platform developer CLI toolbelt. One install gives you a consistent set of commands that work identically on macOS, Linux, and Windows.
 
 ```

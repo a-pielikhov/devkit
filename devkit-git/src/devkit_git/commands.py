@@ -3,21 +3,43 @@ from __future__ import annotations
 import contextlib
 import json
 import re
+from datetime import UTC, datetime
 
 import typer
 from git import GitCommandError, InvalidGitRepositoryError, Repo
+from rich.console import Console as _Console
+from rich.panel import Panel as _Panel
+from rich.text import Text as _Text
 
 from devkit_core.config import ConfigStore
 from devkit_core.output import print_error, print_table, print_warning
 from devkit_core.spinner import run_with_spinner
 
-app = typer.Typer(name="git", help="Git helpers")
+app = typer.Typer(name="git", help="Branch hygiene, fork sync, undo.")
 config_app = typer.Typer(name="config", help="Manage git module config")
 app.add_typer(config_app)
 
 _config = ConfigStore()
 
 _DEFAULT_PROTECTED = ["main", "master", "develop"]
+
+
+def _relative_time(dt: datetime) -> str:
+    delta = int((datetime.now(UTC) - dt.astimezone(UTC)).total_seconds())
+    if delta < 3600:
+        n = max(delta // 60, 1)
+        return f"{n} minute{'s' if n != 1 else ''} ago"
+    if delta < 86400:
+        n = delta // 3600
+        return f"{n} hour{'s' if n != 1 else ''} ago"
+    if delta < 7 * 86400:
+        n = delta // 86400
+        return f"{n} day{'s' if n != 1 else ''} ago"
+    if delta < 30 * 86400:
+        n = delta // (7 * 86400)
+        return f"{n} week{'s' if n != 1 else ''} ago"
+    n = delta // (30 * 86400)
+    return f"{n} month{'s' if n != 1 else ''} ago"
 
 
 class CommandGroup:
@@ -82,11 +104,20 @@ def clean_branches(
     current = _current_branch(repo)
     protected = _protected_branches()
 
-    def _scan() -> list[str]:
-        if fixed_string:
-            return [b.name for b in repo.branches if regexp in b.name]
-        assert pattern is not None
-        return [b.name for b in repo.branches if pattern.fullmatch(b.name)]
+    # Each entry: (name, short_hash, rel_time)
+    def _scan() -> list[tuple[str, str, str]]:
+        results = []
+        for b in repo.branches:
+            match = regexp in b.name if fixed_string else (pattern is not None and pattern.fullmatch(b.name))
+            if match:
+                try:
+                    dt = datetime.fromtimestamp(b.commit.committed_date, tz=UTC)
+                    short_hash = b.commit.hexsha[:7]
+                except Exception:
+                    dt = datetime.now(UTC)
+                    short_hash = "unknown"
+                results.append((b.name, short_hash, _relative_time(dt)))
+        return results
 
     matching = run_with_spinner(_scan, label="Scanning branches...")
 
@@ -94,44 +125,84 @@ def clean_branches(
         typer.echo("No branches match pattern")
         raise typer.Exit(0)
 
-    to_delete: list[str] = []
+    to_delete: list[tuple[str, str, str]] = []
     skipped: list[tuple[str, str]] = []
-    for name in matching:
+    for name, short_hash, rel_time in matching:
         if name == current:
-            skipped.append((name, "currently checked out"))
+            skipped.append((name, "current"))
             continue
         if not force and name in protected:
             skipped.append((name, "protected"))
             continue
-        to_delete.append(name)
+        to_delete.append((name, short_hash, rel_time))
 
-    for name, reason in skipped:
-        print_warning(f"Skipping {name!r}: {reason}")
-
-    if not to_delete:
+    if not to_delete and not skipped:
         raise typer.Exit(0)
 
-    typer.echo("Branches to delete:")
-    for name in to_delete:
-        typer.echo(f"  {name}")
+    console = _Console()
 
-    if not typer.confirm("Delete these branches?"):
-        raise typer.Exit(0)
-
-    for name in to_delete:
-        repo.delete_head(name, force=True)
+    # "Matched N branches against /pattern/" header
+    header = _Text()
+    header.append("  Matched ", style="#707070")
+    header.append(str(len(matching)), style="bold #ffd700")
+    header.append(" branch" + ("es" if len(matching) != 1 else ""), style="#707070")
+    header.append(" against ", style="#707070")
+    header.append(f"/{regexp}/", style="#b6e3a1")
+    console.print()
+    console.print(header)
+    console.print()
 
     if json_:
         typer.echo(
             json.dumps(
                 {
-                    "deleted": to_delete,
+                    "deleted": [n for n, _, _ in to_delete],
                     "skipped": [{"name": n, "reason": r} for n, r in skipped],
                 }
             )
         )
-    else:
-        typer.echo(f"Deleted {len(to_delete)} branch(es)")
+        raise typer.Exit(0)
+
+    # Build panel content
+    panel_body = _Text()
+    for name, short_hash, rel_time in to_delete:
+        panel_body.append(" ✗ ", style="#dc143c")
+        panel_body.append(f"{name:<35}", style="#e0e0e0")
+        panel_body.append(f" {short_hash}  {rel_time}", style="#707070")
+        panel_body.append("\n")
+    for name, reason in skipped:
+        note = "current — protected" if reason == "current" else reason
+        panel_body.append(" ✓ ", style="#474747")
+        panel_body.append(f"{name}  ", style="#707070")
+        panel_body.append(f"({note})", style="#707070")
+        panel_body.append("\n")
+    panel_body.rstrip()
+
+    console.print(
+        _Panel(
+            panel_body,
+            title="[bold #dc143c]branches to delete",
+            border_style="#3e464f",
+            padding=(0, 1),
+        )
+    )
+    console.print()
+
+    if not to_delete:
+        raise typer.Exit(0)
+
+    if not typer.confirm(f"  Delete {len(to_delete)} branch{'es' if len(to_delete) != 1 else ''}?"):
+        raise typer.Exit(0)
+
+    for name, _, _ in to_delete:
+        repo.delete_head(name, force=True)
+
+    result = _Text()
+    result.append("\n  ✓ ", style="bold #ffd700")
+    result.append(f"Deleted {len(to_delete)} branch{'es' if len(to_delete) != 1 else ''}.", style="#e0e0e0")
+    if skipped:
+        result.append(f" Skipped {len(skipped)} (current/protected).", style="#707070")
+    console.print(result)
 
 
 # ── git sync-fork ─────────────────────────────────────────────────────────────
@@ -148,7 +219,13 @@ def sync_fork() -> None:
 
     upstream = next((r for r in repo.remotes if r.name == "upstream"), None)
     if upstream is None:
-        print_error("No upstream remote configured.\nAdd one with: git remote add upstream <repo-url>")
+        print_error(
+            "no upstream remote configured",
+            body="This command rebases onto upstream/main. Add the remote with:",
+            fix="git remote add upstream git@github.com:org/repo.git",
+            hint="See devkit git sync-fork --help for details.",
+            exit_code=2,
+        )
         raise typer.Exit(2)
 
     run_with_spinner(upstream.fetch, label="Fetching from upstream...")

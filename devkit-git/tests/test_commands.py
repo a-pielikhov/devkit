@@ -64,7 +64,7 @@ def test_clean_branches_skips_current(tmp_path: Path, monkeypatch: Any) -> None:
     current = repo.active_branch.name
     result = runner.invoke(app, ["clean-branches", current], input="y\n")
     assert result.exit_code == 0
-    assert "Skipping" in result.output
+    assert "current" in result.output
     assert current in repo.active_branch.name
 
 
@@ -74,7 +74,7 @@ def test_clean_branches_skips_protected(tmp_path: Path, monkeypatch: Any) -> Non
     monkeypatch.chdir(tmp_path)
     result = runner.invoke(app, ["clean-branches", "main"], input="y\n")
     assert result.exit_code == 0
-    assert "Skipping" in result.output
+    assert "protected" in result.output
 
 
 def test_clean_branches_force_deletes_protected(tmp_path: Path, monkeypatch: Any) -> None:

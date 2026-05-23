@@ -14,17 +14,23 @@ runner = CliRunner()
 
 
 def test_encode_uuid_produces_valid_uuid() -> None:
+    import re
+
     result = runner.invoke(encode_app, ["uuid"])
     assert result.exit_code == 0
-    u = result.output.strip()
-    assert len(u) == 36
-    assert u.count("-") == 4
+    # output is "  ◆ <uuid>\n\n  1 UUID · v4\n"
+    m = re.search(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", result.output)
+    assert m is not None
+    assert len(m.group()) == 36
 
 
 def test_encode_uuid_count() -> None:
+    import re
+
     result = runner.invoke(encode_app, ["uuid", "--count", "5"])
     assert result.exit_code == 0
-    assert len(result.output.strip().splitlines()) == 5
+    uuids = re.findall(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", result.output)
+    assert len(uuids) == 5
 
 
 def test_encode_uuid_json() -> None:

@@ -13,11 +13,15 @@ from urllib.request import urlopen
 
 import psutil
 import typer
+from rich.box import HEAVY_HEAD as _HEAVY_HEAD
+from rich.console import Console as _Console
+from rich.table import Table as _Table
+from rich.text import Text as _Text
 
-from devkit_core.output import print_error, print_table
+from devkit_core.output import print_error, print_table, print_tip
 from devkit_core.spinner import run_with_spinner
 
-app = typer.Typer(name="net", help="Network helpers")
+app = typer.Typer(name="net", help="IPs, ports, static server, reachability.")
 
 
 class CommandGroup:
@@ -140,10 +144,29 @@ def port(
     if json_:
         typer.echo(json.dumps(connections))
     else:
-        print_table(
-            ["Process", "PID", "Protocol", "State"],
-            [(c["name"], str(c["pid"]) if c["pid"] else "—", c["protocol"], c["state"]) for c in connections],
+        table = _Table(
+            show_header=True,
+            header_style="bold #e0e0e0",
+            border_style="#3e464f",
+            box=_HEAVY_HEAD,
+            pad_edge=False,
+            padding=(0, 1),
         )
+        table.add_column("Process")
+        table.add_column("PID")
+        table.add_column("Protocol")
+        table.add_column("State")
+        for c in connections:
+            state = c["state"] or "—"
+            state_style = "#ffd700" if state == "LISTEN" else "#9d9d9d"
+            table.add_row(
+                _Text(c["name"], style="#dc143c"),
+                _Text(str(c["pid"]) if c["pid"] else "—", style="#e0e0e0"),
+                _Text(c["protocol"], style="#708090"),
+                _Text(state, style=state_style),
+            )
+        _Console().print(table)
+        print_tip(f"devkit net port {number} --json for machine-readable output")
 
 
 # ── net serve ─────────────────────────────────────────────────────────────────

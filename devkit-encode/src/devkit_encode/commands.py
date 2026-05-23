@@ -14,12 +14,14 @@ from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import typer
+from rich.console import Console as _Console
+from rich.text import Text as _Text
 
 from devkit_core.output import print_error, print_table
 from devkit_core.spinner import run_with_spinner
 
-encode_app = typer.Typer(name="encode", help="Encoding and conversion")
-decode_app = typer.Typer(name="decode", help="Decoding and conversion")
+encode_app = typer.Typer(name="encode", help="UUID, base64, hash, timestamp, JSON.")
+decode_app = typer.Typer(name="decode", help="Inverse of encode.")
 
 
 class EncodeCommandGroup:
@@ -45,8 +47,18 @@ def encode_uuid(
     if json_:
         typer.echo(json.dumps(uuids))
     else:
+        console = _Console()
         for u in uuids:
-            typer.echo(u)
+            line = _Text()
+            line.append("  ◆ ", style="#ffd700")
+            line.append(u, style="#e0e0e0")
+            console.print(line)
+        console.print()
+        footer = _Text()
+        footer.append(f"  {count} UUID{'s' if count != 1 else ''}", style="#707070")
+        footer.append(" · ", style="#474747")
+        footer.append("v4", style="#707070")
+        console.print(footer)
 
 
 # ── encode base64 ─────────────────────────────────────────────────────────────

@@ -4,14 +4,15 @@ import hashlib
 import json
 import re
 from collections import defaultdict
+from collections.abc import Callable
 from pathlib import Path
 
 import typer
 
 from devkit_core.output import print_error, print_table, print_warning
-from devkit_core.spinner import run_with_spinner
+from devkit_core.spinner import live_spinner, run_with_spinner
 
-app = typer.Typer(name="file", help="File operation helpers")
+app = typer.Typer(name="file", help="Find duplicates, large files, by extension.")
 
 
 class CommandGroup:
@@ -30,41 +31,40 @@ def find_duplicates(
 ) -> None:
     """Find files with identical content by SHA-256 hash."""
 
-    def _scan() -> tuple[list[list[tuple[Path, int]]], int]:
-        hashes: dict[str, list[tuple[Path, int]]] = defaultdict(list)
-        empty_count = 0
+    hashes: dict[str, list[tuple[Path, int]]] = defaultdict(list)
+    empty_count = 0
 
-        def scan_dir(d: Path) -> None:
-            nonlocal empty_count
-            try:
-                for item in d.iterdir():
-                    if item.is_symlink():
-                        continue
-                    if item.is_dir():
-                        scan_dir(item)
-                    elif item.is_file():
-                        try:
-                            size = item.stat().st_size
-                            if size == 0:
-                                empty_count += 1
-                                continue
-                            h = hashlib.sha256()
-                            with item.open("rb") as fh:
-                                for chunk in iter(lambda: fh.read(65536), b""):
-                                    h.update(chunk)
-                            hashes[h.hexdigest()].append((item, size))
-                        except PermissionError:
-                            print_warning(f"Permission denied: {item}")
-                        except OSError:
-                            print_warning(f"File modified during scan, skipping: {item}")
-            except PermissionError:
-                print_warning(f"Permission denied, skipping: {d}")
+    def scan_dir(d: Path, update: Callable[[str], None]) -> None:
+        nonlocal empty_count
+        try:
+            for item in d.iterdir():
+                if item.is_symlink():
+                    continue
+                if item.is_dir():
+                    scan_dir(item, update)
+                elif item.is_file():
+                    try:
+                        size = item.stat().st_size
+                        if size == 0:
+                            empty_count += 1
+                            continue
+                        update(str(item))
+                        h = hashlib.sha256()
+                        with item.open("rb") as fh:
+                            for chunk in iter(lambda: fh.read(65536), b""):
+                                h.update(chunk)
+                        hashes[h.hexdigest()].append((item, size))
+                    except PermissionError:
+                        print_warning(f"Permission denied: {item}")
+                    except OSError:
+                        print_warning(f"File modified during scan, skipping: {item}")
+        except PermissionError:
+            print_warning(f"Permission denied, skipping: {d}")
 
-        scan_dir(path.resolve())
-        groups = [files for files in hashes.values() if len(files) > 1]
-        return groups, empty_count
+    with live_spinner("Hashing files…", cancellable=True) as update:
+        scan_dir(path.resolve(), update)
 
-    groups, empty_count = run_with_spinner(_scan, label="Scanning for duplicates...")
+    groups = [files for files in hashes.values() if len(files) > 1]
 
     if not groups:
         typer.echo("No duplicates found")
