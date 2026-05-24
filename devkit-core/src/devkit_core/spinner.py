@@ -35,9 +35,7 @@ def run_with_spinner(fn: Callable[[], T], *, label: str = "Working...") -> T:
 
 
 @contextmanager
-def live_spinner(
-    label: str, *, cancellable: bool = False
-) -> Generator[Callable[[str], None], None, None]:
+def live_spinner(label: str, *, cancellable: bool = False) -> Generator[Callable[[str], None], None, None]:
     """Context manager spinner with a dynamic secondary current-item line.
 
     Usage::
@@ -78,6 +76,7 @@ def live_spinner(
 
     console = Console(stderr=True)
     with Live(_render(), console=console, refresh_per_second=12, transient=True) as live:
+
         def _tick() -> None:
             while not _stop.is_set():
                 _frame[0] += 1

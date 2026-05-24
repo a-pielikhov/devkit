@@ -20,16 +20,16 @@ from .term import is_decorative_ok
 from .update_command import app as update_app
 
 # ── Help-screen styling ───────────────────────────────────────────────────────
-_ru.STYLE_OPTIONS_PANEL_BORDER = "#a50f2d"        # 75% crimson on black
-_ru.STYLE_COMMANDS_PANEL_BORDER = "#3e464f"       # steel dim
+_ru.STYLE_OPTIONS_PANEL_BORDER = "#a50f2d"  # 75% crimson on black
+_ru.STYLE_COMMANDS_PANEL_BORDER = "#3e464f"  # steel dim
 _ru.OPTIONS_PANEL_TITLE = "[bold #dc143c]Options"
-_ru.STYLE_OPTION = "#ffd700"                      # flag names gold
+_ru.STYLE_OPTION = "#ffd700"  # flag names gold
 _ru.STYLE_SWITCH = "#ffd700"
-_ru.STYLE_OPTION_HELP = "#9d9d9d"                 # option help ink
-_ru.STYLE_HELPTEXT = "#9d9d9d"                    # command help text ink
+_ru.STYLE_OPTION_HELP = "#9d9d9d"  # option help ink
+_ru.STYLE_HELPTEXT = "#9d9d9d"  # command help text ink
 _ru.STYLE_HELPTEXT_FIRST_LINE = "#9d9d9d"
-_ru.STYLE_USAGE = "bold #e0e0e0"                  # "Usage:" bold moon
-_ru.STYLE_USAGE_COMMAND = "#e0e0e0"               # command in usage moon
+_ru.STYLE_USAGE = "bold #e0e0e0"  # "Usage:" bold moon
+_ru.STYLE_USAGE_COMMAND = "#e0e0e0"  # command in usage moon
 _ru.STYLE_COMMANDS_TABLE_FIRST_COLUMN = "bold #dc143c"  # command names bold crimson
 
 _MODULES_PANEL = "[bold #ffd700]Modules"

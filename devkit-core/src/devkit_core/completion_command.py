@@ -13,5 +13,6 @@ def regenerate(
 ) -> None:
     """Regenerate the _devkit zsh completion file (~/.zfunc/_devkit)."""
     from .completion import install_zsh_completion
+
     path = install_zsh_completion(target)
     typer.echo(f"Completion written to {path}")

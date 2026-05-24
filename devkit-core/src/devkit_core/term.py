@@ -11,11 +11,7 @@ def is_tty() -> bool:
 
 def is_decorative_ok() -> bool:
     """True when ANSI decorations (colors, spinners, banners) should be shown."""
-    return (
-        is_tty()
-        and os.environ.get("NO_COLOR") is None
-        and os.environ.get("CI") is None
-    )
+    return is_tty() and os.environ.get("NO_COLOR") is None and os.environ.get("CI") is None
 
 
 def terminal_width() -> int:

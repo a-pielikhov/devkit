@@ -5,9 +5,9 @@ import sys
 
 # Variant 3 color palette
 _RESET = "\033[0m"
-_MOD   = "\033[38;2;79;195;247m"   # cyan  #4fc3f7 — modules
-_MGMT  = "\033[38;2;255;183;77m"   # amber #ffb74d — manage
-_DIM   = "\033[38;2;68;85;102m"    # dim   #445566 — descriptions
+_MOD = "\033[38;2;79;195;247m"  # cyan  #4fc3f7 — modules
+_MGMT = "\033[38;2;255;183;77m"  # amber #ffb74d — manage
+_DIM = "\033[38;2;68;85;102m"  # dim   #445566 — descriptions
 
 LOGO_FULL = (
     "    __               __     __ __   \n"

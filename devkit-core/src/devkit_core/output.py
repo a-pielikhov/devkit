@@ -10,20 +10,20 @@ from rich.text import Text
 from rich.theme import Theme
 
 STYLES = {
-    "prompt":    "bold #dc143c",
-    "path":      "#708090",
-    "group":     "bold #dc143c",
-    "flag":      "#ffd700",
-    "value":     "#ffd700",
-    "string":    "#b6e3a1",
-    "success":   "bold #ffd700",
-    "error":     "bold #dc143c",
-    "primary":   "#e0e0e0",           # moon — full brightness
-    "ink":       "#9d9d9d",           # 70% moon on black  rgba(224,224,224,0.70)
-    "secondary": "#708090",           # steel
-    "dim":       "#707070",           # 50% moon on black  rgba(224,224,224,0.50)
-    "dim2":      "#474747",           # 32% moon on black  rgba(224,224,224,0.32)
-    "border":    "#3e464f",           # 55% steel on black rgba(112,128,144,0.55)
+    "prompt": "bold #dc143c",
+    "path": "#708090",
+    "group": "bold #dc143c",
+    "flag": "#ffd700",
+    "value": "#ffd700",
+    "string": "#b6e3a1",
+    "success": "bold #ffd700",
+    "error": "bold #dc143c",
+    "primary": "#e0e0e0",  # moon — full brightness
+    "ink": "#9d9d9d",  # 70% moon on black  rgba(224,224,224,0.70)
+    "secondary": "#708090",  # steel
+    "dim": "#707070",  # 50% moon on black  rgba(224,224,224,0.50)
+    "dim2": "#474747",  # 32% moon on black  rgba(224,224,224,0.32)
+    "border": "#3e464f",  # 55% steel on black rgba(112,128,144,0.55)
 }
 
 _theme = Theme(STYLES)
@@ -73,6 +73,7 @@ def print_warning(message: str) -> None:
 def print_tip(text: str) -> None:
     """Print a dim hint line to stdout. Silently skipped when not a TTY."""
     import sys
+
     if not (hasattr(sys.stdout, "isatty") and sys.stdout.isatty()):
         return
     _stdout.print(f"  [dim]Tip: {text}[/dim]")
