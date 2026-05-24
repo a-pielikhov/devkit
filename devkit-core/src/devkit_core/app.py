@@ -13,6 +13,7 @@ from rich.text import Text
 from .aliases import ALIASES
 from .banner import print_banner
 from .commands import install, list_extensions, uninstall
+from .completion_command import app as completion_app
 from .discovery import discover_plugins
 from .global_config import app as config_app
 from .term import is_decorative_ok
@@ -141,6 +142,7 @@ def build_app() -> typer.Typer:
 
     app.add_typer(update_app, rich_help_panel=_MANAGE_PANEL)
     app.add_typer(config_app, rich_help_panel=_MANAGE_PANEL)
+    app.add_typer(completion_app, rich_help_panel=_MANAGE_PANEL)
 
     _apply_aliases(app, sub_apps)
     return app
