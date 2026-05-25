@@ -4,15 +4,15 @@ build-backend = "hatchling.build"
 
 [project]
 name = "devkit-macos"
-version = "0.1.0"
+version = "0.2.0"
 description = "macOS bundle for devkit — installs core and all default command groups"
 requires-python = ">=3.11"
 dependencies = [
-    "devkit-core>=0.1.0",
-    "devkit-git>=0.1.0",
-    "devkit-net>=0.1.0",
-    "devkit-file>=0.1.0",
-    "devkit-encode>=0.1.0",
+    "devkit-core>=0.2.0",
+    "devkit-git>=0.2.0",
+    "devkit-net>=0.2.0",
+    "devkit-file>=0.2.0",
+    "devkit-encode>=0.2.0",
 ]
 
 [tool.hatch.build.targets.wheel]

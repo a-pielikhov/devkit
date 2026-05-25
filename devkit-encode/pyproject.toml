@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "devkit-encode"
-version = "0.1.0"
+version = "0.2.0"
 description = "Encoding and conversion helpers for devkit"
 requires-python = ">=3.11"
 dependencies = [
-    "devkit-core>=0.1.0",
+    "devkit-core>=0.2.0",
     "typer>=0.12",
 ]
 
