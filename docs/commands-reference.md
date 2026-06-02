@@ -6,7 +6,7 @@ Full reference for all `devkit` commands. General form:
 devkit <group> <command> [arguments] [--options]
 ```
 
-Top-level commands (`install`, `uninstall`, `list`) have no group prefix.
+Top-level commands (`install`, `uninstall`, `list`, `update`, `config`) have no group prefix.
 
 **Exit codes** — consistent across all commands:
 
@@ -75,39 +75,47 @@ List all currently installed command groups in a table: group name, package, ver
 
 ## devkit git
 
-### devkit git clean-branches `<regexp>`
+### devkit git clean-branches `<pattern>`
+
+Alias: `devkit git cb`
 
 ```
-devkit git clean-branches <regexp> [--force] [--json]
+devkit git clean-branches <pattern> [--force] [--fixed-string] [--dry-run] [--json]
 ```
 
-Delete all local branches whose name fully matches `<regexp>`. Prints matching branches and asks for confirmation before deleting.
+Delete all local branches whose name matches `<pattern>`. By default `<pattern>` is a Python regexp matched against the full branch name. With `--fixed-string` it is treated as a plain substring. Prints matching branches and asks for confirmation before deleting.
 
 Never deletes the currently checked-out branch. Never deletes protected branches (configured via `devkit git config`) unless `--force` is passed.
 
-| Flag | Description |
-|---|---|
-| `--force` | Also delete protected branches (never deletes current branch) |
-| `--json` | Output result as JSON |
-| `--help` | Show help |
+| Flag | Short | Description |
+|---|---|---|
+| `--force` | `-f` | Also delete protected branches (never deletes current branch) |
+| `--fixed-string` | `-F` | Treat `<pattern>` as a plain substring — skips regexp validation |
+| `--dry-run` | `-n` | Show which branches would be deleted without deleting them |
+| `--json` | `-j` | Output result as JSON |
+| `--help` | — | Show help |
 
-**Exit codes:** 0 on success or no matches · 1 if `<regexp>` is invalid · 2 if not in a git repo
+**Exit codes:** 0 on success or no matches · 1 if `<pattern>` is an invalid regexp (regexp mode only) · 2 if not in a git repo
 
 ---
 
 ### devkit git sync-fork
 
+Alias: `devkit git sf`
+
 ```
-devkit git sync-fork
+devkit git sync-fork [--force] [--json]
 ```
 
 Fetch from the `upstream` remote, rebase the current branch onto `upstream/main` (falls back to `upstream/master`), and push to `origin`.
 
 Aborts before fetching if uncommitted changes are present. If rebase conflicts occur, aborts the rebase and restores original state.
 
-| Flag | Description |
-|---|---|
-| `--help` | Show help |
+| Flag | Short | Description |
+|---|---|---|
+| `--force` | `-f` | Skip confirmation prompt |
+| `--json` | `-j` | Output result as JSON |
+| `--help` | — | Show help |
 
 **Exit codes:** 0 on success · 2 if `upstream` remote missing, network error, or rebase conflict
 
@@ -131,17 +139,19 @@ Undo the last commit via `git reset --soft HEAD~1`. Changes remain staged.
 
 ### devkit git list-merged
 
+Alias: `devkit git lm`
+
 ```
 devkit git list-merged [--delete] [--json]
 ```
 
 List all local branches fully merged into `main` (auto-detects `master` as fallback). Excludes the currently checked-out branch and protected branches.
 
-| Flag | Description |
-|---|---|
-| `--delete` | Print list, ask for confirmation, then delete listed branches |
-| `--json` | Output branch names as JSON array |
-| `--help` | Show help |
+| Flag | Short | Description |
+|---|---|---|
+| `--delete` | — | Print list, ask for confirmation, then delete listed branches |
+| `--json` | `-j` | Output branch names as JSON array |
+| `--help` | — | Show help |
 
 **Exit codes:** 0 on success or empty list · 1 if default branch cannot be detected
 
@@ -427,3 +437,74 @@ Scan `[path]` recursively (default: current directory) and list files above `--m
 | `--help` | — | Show help |
 
 **Exit codes:** 0 on success or no files match · 1 if `--min-size` format is invalid or `--top 0`
+
+---
+
+## devkit update
+
+```
+devkit update [<package>] [--check] [--list] [--version <tag>] [--dry-run] [--json]
+```
+
+Upgrade devkit packages. Without arguments, upgrades all installed `devkit-*` packages after confirmation. With a package name, upgrades that package only.
+
+Queries the GitHub Releases API for the main bundle; uses `pipx inject` for user-installed extensions.
+
+| Flag | Short | Description |
+|---|---|---|
+| `--check` | — | Print version table (current vs latest) without installing anything |
+| `--list` | — | List all available releases from GitHub (tag, date, title) newest-first |
+| `--version <tag>` | — | Install a specific release (e.g. `v0.2.1`); exits 2 if tag not found |
+| `--dry-run` | `-n` | Show what would be installed without installing |
+| `--json` | `-j` | Output `--check` or `--list` result as JSON |
+| `--help` | — | Show help |
+
+**Exit codes:** 0 on success · 1 if package name not recognised · 2 if `--version <tag>` not found or GitHub API unreachable during install
+
+**Background auto-check:** on every `devkit` invocation, a background daemon thread checks `~/.config/devkit/update-cache.json`. If the last check was more than `auto_check_interval_days` ago (default 7), it queries the GitHub Releases API and writes the result back. If a newer version is available, a notice is printed after the command output:
+
+```
+  Update available: v0.2.0 → run `devkit update` to install
+```
+
+Auto-check is non-blocking and never delays the invoking command. Configure via `devkit config`.
+
+---
+
+## devkit config
+
+```
+devkit config set <key> <value>
+devkit config get <key>
+devkit config show [--json]
+devkit config reset <key>
+```
+
+Manage core-level (global) settings. Distinct from per-module config (`devkit git config`, `devkit net config`). Settings are stored in `~/.config/devkit/config.toml` under the relevant namespace.
+
+| Subcommand | Description |
+|---|---|
+| `set <key> <value>` | Write a value and print confirmation |
+| `get <key>` | Print the current value, or the default if not explicitly set |
+| `show` | Print the full global config section as TOML |
+| `show --json` / `show -j` | Print as JSON |
+| `reset <key>` | Remove the explicit override, restoring the default |
+
+Unrecognised keys are rejected with a clear error listing valid keys. See [config-reference.md](config-reference.md) for the full key list.
+
+**Exit codes:** 0 on success · 1 if key is not recognised
+
+---
+
+## Command aliases
+
+Short aliases for common commands. All flags and arguments work identically to the canonical form.
+
+| Alias | Canonical |
+|---|---|
+| `devkit ls` | `devkit list` |
+| `devkit enc` | `devkit encode` |
+| `devkit dec` | `devkit decode` |
+| `devkit git cb` | `devkit git clean-branches` |
+| `devkit git lm` | `devkit git list-merged` |
+| `devkit git sf` | `devkit git sync-fork` |

@@ -63,43 +63,39 @@ Restart your shell (or run `source ~/.zshrc` / `source ~/.bashrc`) for completio
 
 ## Development setup
 
-Each package under `devkit-*/` is installed separately in editable mode:
+Prerequisites: Python 3.11+, [uv](https://docs.astral.sh/uv/), [Docker](https://docs.docker.com/get-docker/) (for `make dev`).
+
+All dev tasks go through `make` — no separate scripts to remember.
 
 ```bash
-pip install -e devkit-core/[dev]
-pip install -e devkit-cli/[dev]
-pip install -e devkit-git/[dev]
-pip install -e devkit-net/[dev]
-pip install -e devkit-file/[dev]
-pip install -e devkit-encode/[dev]
+make init                        # one-time setup: sync venv + install git hooks
+make run ARGS="git list-merged"  # run a dev command without entering a shell
+make dev                         # launch an isolated dev shell inside Docker
+make dev-clean                   # remove the dev image + venv volume (force rebuild)
 ```
 
-Then run `devkit --help` to confirm the CLI is working.
+`make dev` runs a Docker container with the workspace mounted — edits to `devkit-*/src/` are live immediately, no rebuild needed. The container's venv is stored in a named Docker volume (`devkit-dev-venv`) so it persists between sessions.
 
 ---
 
 ## Tests
 
 ```bash
-cd devkit-core && pytest
+make test        # run all packages
 ```
 
-To run all packages at once:
-
-```bash
-for pkg in devkit-core devkit-git devkit-net devkit-file devkit-encode; do
-  echo "=== $pkg ===" && (cd $pkg && pytest -q)
-done
-```
+Tests also run automatically on every `git commit` via the pre-commit hook installed by `make init`.
 
 ---
 
 ## Linting and formatting
 
-Config lives in the root `pyproject.toml`. Run from the repo root:
-
 ```bash
-ruff format . && ruff check . && mypy devkit-core/src devkit-git/src devkit-net/src devkit-file/src devkit-encode/src
+make check       # fmt + lint + type + test (full CI equivalent)
+make fmt         # ruff format check only
+make lint        # ruff lint only
+make type        # mypy only
+make fix         # auto-fix formatting and lint issues
 ```
 
 ---
@@ -123,9 +119,8 @@ ruff format . && ruff check . && mypy devkit-core/src devkit-git/src devkit-net/
 
 **PR process:**
 1. Branch off `main`
-2. `ruff format . && ruff check . && mypy ...` — all must pass
-3. `pytest` in every affected package — all must pass
-4. Open a PR against `main`; reference the AC numbers from the spec that the PR addresses
+2. `make check` — all must pass (format, lint, type, tests)
+3. Open a PR against `main`; reference the AC numbers from the spec that the PR addresses
 
 ---
 

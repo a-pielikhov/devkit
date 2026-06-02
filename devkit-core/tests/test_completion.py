@@ -165,6 +165,60 @@ def test_build_dispatch_fn_routes_current_3() -> None:
     assert "_devkit_${words[2]}" in result
 
 
+def test_build_dispatch_fn_module_aliases_in_mods_array() -> None:
+    result = build_dispatch_fn(["encode", "decode"], {"enc": "encode", "dec": "decode"})
+    assert "enc" in result
+    assert "dec" in result
+    assert "encode" in result
+    assert "decode" in result
+
+
+def test_build_dispatch_fn_alias_case_statement() -> None:
+    result = build_dispatch_fn(["encode", "decode"], {"enc": "encode", "dec": "decode"})
+    assert "dec) _canon=decode" in result
+    assert "enc) _canon=encode" in result
+
+
+def test_build_dispatch_fn_alias_uses_canon_variable() -> None:
+    result = build_dispatch_fn(["encode"], {"enc": "encode"})
+    assert "_devkit_${_canon}" in result
+    assert "local _canon=${words[2]}" in result
+
+
+def test_build_dispatch_fn_alias_typer_fallback_uses_canon() -> None:
+    # When aliases are present the Typer fallback must pass the canonical name
+    # so that Typer (which doesn't know about aliases) receives e.g. "decode"
+    # not "dec" — otherwise it falls back to top-level completions.
+    result = build_dispatch_fn(["encode", "decode"], {"enc": "encode", "dec": "decode"})
+    assert "${words[1]} ${_canon} ${(j: :)words[3,$CURRENT]}" in result
+
+
+def test_build_dispatch_fn_no_alias_typer_fallback_uses_words() -> None:
+    # Without aliases the original words slice is used unchanged.
+    result = build_dispatch_fn(["git"])
+    assert "${words[1,$CURRENT]}" in result
+
+
+def test_build_dispatch_fn_non_module_alias_excluded() -> None:
+    # "ls" maps to "list" which is not in module_names — no alias resolution generated
+    result = build_dispatch_fn(["git"], {"ls": "list"})
+    assert "_canon" not in result
+    assert "_devkit_mods=(git)" in result
+
+
+def test_generate_zsh_script_alias_dispatch() -> None:
+    plugins = [
+        _make_plugin("encode", "Encoding and conversion"),
+        _make_plugin("decode", "Decoding and conversion"),
+    ]
+    with patch("devkit_core.completion.discover_plugins", return_value=plugins):
+        result = generate_zsh_script()
+    assert "enc" in result
+    assert "dec) _canon=decode" in result
+    assert "enc) _canon=encode" in result
+    assert "_devkit_${_canon}" in result
+
+
 def test_build_dispatch_fn_has_typer_fallback() -> None:
     result = build_dispatch_fn(["git"])
     assert "_DEVKIT_COMPLETE=complete_zsh" in result

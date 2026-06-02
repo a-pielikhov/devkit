@@ -12,6 +12,10 @@ Configuration is organised into per-module sections. Each module only reads its 
 [git]
 protected_branches = ["main", "master", "develop"]
 default_branch = "main"
+
+[update]
+auto_check_enabled = true
+auto_check_interval_days = 7
 ```
 
 ---
@@ -76,6 +80,40 @@ Resulting `~/.config/devkit/config.toml`:
 protected_branches = ["main", "master", "develop", "staging"]
 default_branch = "trunk"
 ```
+
+---
+
+## devkit update config keys
+
+Managed via `devkit config set / get / reset`. These are core-level (global) keys, not per-module.
+
+| Key | Type | Default | Description |
+|---|---|---|---|
+| `update.auto_check_enabled` | bool | `true` | Enable background update checks on every invocation |
+| `update.auto_check_interval_days` | int | `7` | Minimum days between background checks |
+
+### Examples
+
+```bash
+# Disable automatic background checks
+devkit config set update.auto_check_enabled false
+
+# Check for updates weekly (default)
+devkit config set update.auto_check_interval_days 7
+
+# View current update settings
+devkit config show
+```
+
+### Update cache file
+
+`~/.config/devkit/update-cache.json` — written by the background thread, never user-edited. Stores the last check timestamp and latest known version:
+
+```json
+{"last_check_timestamp": "2026-05-16T10:00:00Z", "latest_known_version": "v0.2.0"}
+```
+
+Delete this file to force an immediate background check on the next invocation.
 
 ---
 

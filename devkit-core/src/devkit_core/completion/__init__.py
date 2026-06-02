@@ -31,11 +31,13 @@ def generate_zsh_script() -> str:
     )
 
     top_aliases = ALIASES.get("", {})
+    plugin_names = {g.name for g in plugins}
+    module_aliases = {a: c for a, c in top_aliases.items() if c in plugin_names}
     module_group = module_entries(plugins, top_aliases, builtin_names)
     mgmt_group = manage_entries()
     cmd_groups = [command_entries(g) for g in plugins]
     group_fns = [build_group_fn(g.name, cg) for g, cg in zip(plugins, cmd_groups, strict=True)]
-    dispatch_fn = build_dispatch_fn([g.name for g in plugins])
+    dispatch_fn = build_dispatch_fn([g.name for g in plugins], module_aliases)
 
     return assemble(module_group, mgmt_group, group_fns, dispatch_fn, extra_groups=cmd_groups)
 

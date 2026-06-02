@@ -1,0 +1,30 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff format
+        language: system
+        entry: uv run ruff format --check .
+        pass_filenames: false
+        types: [python]
+
+      - id: ruff-lint
+        name: ruff lint
+        language: system
+        entry: uv run ruff check .
+        pass_filenames: false
+        types: [python]
+
+      - id: mypy
+        name: mypy
+        language: system
+        entry: uv run mypy .
+        pass_filenames: false
+        types: [python]
+
+      - id: pytest
+        name: pytest
+        language: system
+        entry: bash -c 'for pkg in devkit-core devkit-git devkit-net devkit-file devkit-encode; do (cd "$pkg" && uv run --with pytest pytest -q) || exit 1; done'
+        pass_filenames: false
+        types: [python]
